@@ -49,10 +49,41 @@ function App() {
   );
 
   const handleCreateEvent = ()=>{
-    setEvents((prev) => [...prev, { start, end, title }]);
+
+    setEvents( [...myEvents, { start, end, title }]);
+    console.log('EVENTS --->',  { start, end, title })
     setOpen(false)
 
   }
+
+  const moveEvent = useCallback(
+    ({ event, start, end, isAllDay: droppedOnAllDaySlot = false }) => {
+      const { allDay } = event
+      if (!allDay && droppedOnAllDaySlot) {
+        event.allDay = true
+      }
+
+      setEvents((prev) => {
+        const existing = prev.find((ev) => ev.id === event.id) ?? {}
+        const filtered = prev.filter((ev) => ev.id !== event.id)
+        return [...filtered, { ...existing, start, end, allDay }]
+      })
+    },
+    [setEvents]
+  )
+
+
+  const resizeEvent = useCallback(
+    ({ event, start, end }) => {
+      setEvents((prev) => {
+        const existing = prev.find((ev) => ev.id === event.id) ?? {}
+        const filtered = prev.filter((ev) => ev.id !== event.id)
+        return [...filtered, { ...existing, start, end }]
+      })
+    },
+    [setEvents]
+  )
+
 
   const { defaultDate, scrollToTime } = useMemo(
     () => ({
@@ -75,9 +106,9 @@ function App() {
           </Typography>
           
           <Box sx={{display:'flex', flexDirection:'column'}}>
-          <TextField id="standard-basic" label="Title" variant="standard" onChange={(e)=>setTitle(e.target.vale)} />
-          <TextField id="standard-basic" label="Start" variant="standard" />
-          <TextField id="standard-basic" label="End" variant="standard" />
+          <TextField id="standard-basic" label="Title" variant="standard" onChange={(e)=>setTitle(e.target.value)} />
+          <TextField id="standard-basic" label="Start" variant="standard" value={start} />
+          <TextField id="standard-basic" label="End" variant="standard" value={end}/>
           <FormControlLabel control={<Checkbox defaultChecked />} label="All day" />
            
           <Button variant="contained" onClick={handleCreateEvent}>Create</Button>
@@ -86,14 +117,16 @@ function App() {
         </Box>
       </Modal>
       <Calendar
-        events={events}
+        events={myEvents}
         startAccessor="start"
         endAccessor="end"
         localizer={localizer}
-        style={{ height: 500 }}
+        style={{ height: 800 }}
         onSelectEvent={handleSelectEvent}
         onSelectSlot={handleSelectSlot}
         selectable
+        onEventDrop={moveEvent}
+          onEventResize={resizeEvent}
         scrollToTime={scrollToTime}
       />
     </div>
